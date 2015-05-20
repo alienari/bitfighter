@@ -65,7 +65,7 @@
 #include "zapjournal.h"
 
 #include "GameManager.h"
-
+#include "physfs.hpp"
 #include "StackTracer.h"
 
 using namespace TNL;
@@ -1053,7 +1053,9 @@ int main(int argc, char **argv)
    // only way to specify a non-standard location is via the command line, which we've now read.
    setupLogging(folderManager->getLogDir());
 
-   InputCodeManager::initializeKeyNames();      // Used by loadSettingsFromINI()
+   InputCodeManager::initializeKeyNames();   // Used by loadSettingsFromINI()
+
+   PhysFS::init(argv[0]);                    // Has to happen before we process the INI, because that sets paths
 
    // Load our primary settings file
    GameSettings::iniFile.SetPath(joindir(folderManager->getIniDir(), "bitfighter.ini"));
@@ -1125,7 +1127,10 @@ int main(int argc, char **argv)
 #endif
 
       if(!VideoSystem::init())                // Initialize video and window system
+      {
+         logprintf(LogConsumer::LogFatalError, "Failed to initialize VideoSystem!");
          GameManager::shutdownBitfighter();
+      }
 
       RenderManager::init();                  // Initialize the OpenGL abstraction layer
       mGL = RenderManager::getGL();

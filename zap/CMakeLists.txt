@@ -69,6 +69,7 @@ set(SHARED_SOURCES
 	move.cpp
 	moveObject.cpp
 	NexusGame.cpp
+	physfs.cpp
 	PickupItem.cpp
 	playerInfo.cpp
 	Point.cpp
@@ -201,6 +202,7 @@ file(GLOB OTHER_HEADERS
 	${CMAKE_SOURCE_DIR}/poly2tri/*.h
 	${CMAKE_SOURCE_DIR}/poly2tri/common/*.h
 	${CMAKE_SOURCE_DIR}/poly2tri/sweep/*.h
+	${CMAKE_SOURCE_DIR}/physfs-cpp/include/physfs.h
 )
 
 BF_PLATFORM_SET_EXTRA_SOURCES()
