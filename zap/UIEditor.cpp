@@ -402,8 +402,7 @@ void EditorUserInterface::loadLevel()
       cleanUp();
 
    FolderManager *folderManager = mGameSettings->getFolderManager();
-   string fileName = joindir(folderManager->getLevelDir(), filename).c_str();
-
+   string fileName = filename; // joindir(folderManager->getLevelDir(), filename).c_str();
 
    // Process level file --> returns true if file found and loaded, false if not (assume it's a new level)
 
@@ -5145,8 +5144,8 @@ void EditorUserInterface::testLevelStart()
    levelList.push_back(LevelSource::TestFileName);
 
    LevelSourcePtr levelSource = LevelSourcePtr(
-         new FolderLevelSource(levelList, mGameSettings->getFolderManager()->getLevelDir()));
-
+      new FolderLevelSource(levelList, "")); // mGameSettings->getFolderManager()->getLevelDir()));
+   
    initHosting(getGame()->getSettingsPtr(), levelSource, true, false);
 }
 
