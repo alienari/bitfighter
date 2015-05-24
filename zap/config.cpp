@@ -1170,20 +1170,41 @@ void writeSkipList(CIniFile *ini, const Vector<string> *levelSkipList)
 //////////////////////////////////
 //////////////////////////////////
 
+
 // Constructor
 FolderManager::FolderManager()
 {
-   resolveDirs(getExecutableDir());
+   string root = getExecutableDir();
+
+   rootDataDir = root;
+
+   // root used to specify the following folders
+   robotDir      = joindir(root, "robots");          
+   pluginDir     = joindir(root, "editor_plugins"); 
+   luaDir        = joindir(root, "scripts");           
+   iniDir        = joindir(root, "");                  
+   logDir        = joindir(root, "");                  
+   screenshotDir = joindir(root, "screenshots");
+   musicDir      = joindir(root, "music");           
+   recordDir     = joindir(root, "record");         
+
+   // root not used for these folders
+   //addSfxDir("sfx", true);     --> Will be added later in resolveDirs()
+   fontsDir = joindir("", "fonts");
+
+   DbWriter::DatabaseWriter::sqliteFile = logDir + DbWriter::DatabaseWriter::sqliteFile;
+
+   mResolved = false;
 }
 
 
 // Constructor
-FolderManager::FolderManager(const string &levelDir,    const string &robotDir,  const string &sfxDir,        const string &musicDir, 
-                             const string &iniDir,      const string &logDir,    const string &screenshotDir, const string &luaDir,
-                             const string &rootDataDir, const string &pluginDir, const string &fontsDir,      const string &recordDir) :
+FolderManager::FolderManager(const string &levelDir,    const string &robotDir,  const Vector<string> &sfxDirs, const string &musicDir, 
+                             const string &iniDir,      const string &logDir,    const string &screenshotDir,   const string &luaDir,
+                             const string &rootDataDir, const string &pluginDir, const string &fontsDir,        const string &recordDir) :
                levelDir      (levelDir),
                robotDir      (robotDir),
-               sfxDir        (sfxDir),
+               sfxDirs       (sfxDirs),
                musicDir      (musicDir),
                iniDir        (iniDir),
                logDir        (logDir),
@@ -1194,7 +1215,7 @@ FolderManager::FolderManager(const string &levelDir,    const string &robotDir, 
                fontsDir      (fontsDir),
                recordDir     (recordDir)
 {
-   // Do nothing (more)
+   mResolved = false;
 }
 
 
@@ -1216,21 +1237,43 @@ static string resolutionHelper(const string &cmdLineDir, const string &rootDataD
 }
 
 
-struct CmdLineSettings;
+//struct CmdLineSettings;
+
+#define CHK_RESOLVED() TNLAssert(mResolved, "Must call resolveDirs() before using this getter!")
 
 // Getters
-string FolderManager::getLevelDir()      const { return levelDir;      }
-string FolderManager::getIniDir()        const { return iniDir;        }
-string FolderManager::getRecordDir()     const { return recordDir;     }
-string FolderManager::getRobotDir()      const { return robotDir;      }
-string FolderManager::getFontsDir()      const { return fontsDir;      }
-string FolderManager::getScreenshotDir() const { return screenshotDir; }
-string FolderManager::getSfxDir()        const { return sfxDir;        }
-string FolderManager::getMusicDir()      const { return musicDir;      }
-string FolderManager::getRootDataDir()   const { return rootDataDir;   }
-string FolderManager::getLogDir()        const { return logDir;        }
-string FolderManager::getPluginDir()     const { return pluginDir;     }
-string FolderManager::getLuaDir()        const { return luaDir;        }
+string FolderManager::getIniDir()           const { return iniDir; }    // This one is usable before resolveDirs()
+string FolderManager::getLevelDir()         const { CHK_RESOLVED();  return levelDir; }
+string FolderManager::getRecordDir()        const { CHK_RESOLVED();  return recordDir; }
+string FolderManager::getRobotDir()         const { CHK_RESOLVED();  return robotDir; }
+string FolderManager::getFontsDir()         const { CHK_RESOLVED();  return fontsDir; }
+string FolderManager::getScreenshotDir()    const { CHK_RESOLVED();  return screenshotDir; }
+string FolderManager::getMusicDir()         const { CHK_RESOLVED();  return musicDir; }
+string FolderManager::getRootDataDir()      const { CHK_RESOLVED();  return rootDataDir; }
+string FolderManager::getLogDir()           const { CHK_RESOLVED();  return logDir; }
+string FolderManager::getPluginDir()        const { CHK_RESOLVED();  return pluginDir; }
+string FolderManager::getLuaDir()           const { CHK_RESOLVED();  return luaDir; }
+
+
+const Vector<string> &FolderManager::getSfxDirs() const { CHK_RESOLVED();  return sfxDirs; }
+
+#undef CHK_RESOLVED
+
+
+void FolderManager::addSfxDir(const string &dir, bool appendToPath)
+{
+   if(appendToPath)
+      sfxDirs.push_back(dir);
+   else
+      sfxDirs.push_front(dir);
+}
+
+
+void FolderManager::addSfxDirs(const Vector<string> &dirs)
+{
+   for(S32 i = 0; i < dirs.size(); i++)
+      addSfxDir(dirs[i], true);
+}
 
 
 // Setters
@@ -1254,43 +1297,29 @@ void FolderManager::resolveDirs(GameSettings *settings)
    // Note that we generally rely on Bitfighter being run from its install folder for these paths to be right... at least in Windows
 
    // rootDataDir used to specify the following folders
-   folderManager->robotDir      = resolutionHelper(cmdLineDirs.robotDir,      rootDataDir, "robots");
-   folderManager->pluginDir     = resolutionHelper(cmdLineDirs.pluginDir,     rootDataDir, "editor_plugins");
-   folderManager->luaDir        = resolutionHelper(cmdLineDirs.luaDir,        rootDataDir, "scripts");
-   folderManager->iniDir        = resolutionHelper(cmdLineDirs.iniDir,        rootDataDir, "");
-   folderManager->logDir        = resolutionHelper(cmdLineDirs.logDir,        rootDataDir, "");
+   folderManager->robotDir = resolutionHelper(cmdLineDirs.robotDir, rootDataDir, "robots");
+   folderManager->pluginDir = resolutionHelper(cmdLineDirs.pluginDir, rootDataDir, "editor_plugins");
+   folderManager->luaDir = resolutionHelper(cmdLineDirs.luaDir, rootDataDir, "scripts");
+   folderManager->iniDir = resolutionHelper(cmdLineDirs.iniDir, rootDataDir, "");
+   folderManager->logDir = resolutionHelper(cmdLineDirs.logDir, rootDataDir, "");
    folderManager->screenshotDir = resolutionHelper(cmdLineDirs.screenshotDir, rootDataDir, "screenshots");
-   folderManager->musicDir      = resolutionHelper(cmdLineDirs.musicDir,      rootDataDir, "music");
-   folderManager->recordDir     = resolutionHelper(cmdLineDirs.recordDir,     rootDataDir, "record");
+   folderManager->musicDir = resolutionHelper(cmdLineDirs.musicDir, rootDataDir, "music");
+   folderManager->recordDir = resolutionHelper(cmdLineDirs.recordDir, rootDataDir, "record");
 
    // rootDataDir not used for these folders
-   folderManager->sfxDir        = resolutionHelper(cmdLineDirs.sfxDir,        "", "sfx");
-   folderManager->fontsDir      = resolutionHelper(cmdLineDirs.fontsDir,      "", "fonts");
+
+   folderManager->addSfxDirs(cmdLineDirs.sfxDirs);    // Add any user specified folders
+   folderManager->addSfxDir("sfx", true);             // And add the system default as a fallback
+
+
+   folderManager->fontsDir = resolutionHelper(cmdLineDirs.fontsDir, "", "fonts");
 
    DatabaseWriter::sqliteFile = folderManager->logDir + DatabaseWriter::sqliteFile;
+
+   mResolved = true;
 }
 
 
-void FolderManager::resolveDirs(const string &root)
-{
-   rootDataDir = root;
-
-   // root used to specify the following folders
-   robotDir      = joindir(root, "robots");
-   pluginDir     = joindir(root, "editor_plugins");
-   luaDir        = joindir(root, "scripts");
-   iniDir        = joindir(root, "");
-   logDir        = joindir(root, "");
-   screenshotDir = joindir(root, "screenshots");
-   musicDir      = joindir(root, "music");
-   recordDir     = joindir(root, "record");
-
-   // root not used for these folders
-   sfxDir        = joindir("", "sfx");
-   fontsDir      = joindir("", "fonts");
-
-   DbWriter::DatabaseWriter::sqliteFile = logDir + DbWriter::DatabaseWriter::sqliteFile;
-}
 
 // Figure out where the levels are.  This is exceedingly complex.
 //
@@ -1404,9 +1433,6 @@ void FolderManager::resolveLevelDir(GameSettings *settings)
       setLevelDir("");    // Surrender
 }
 
-
-extern string strictjoindir(const string &part1, const string &part2);
-extern bool fileExists(const string &filename);
 
 static string checkName(const string &filename, const Vector<string> &folders, const char *extensions[])
 {
