@@ -77,7 +77,7 @@ public:
 
 Version getLinkedVersion();
 
-void init(char const * argv0);
+bool init(char const * argv0);
 
 void deinit();
 
@@ -102,6 +102,10 @@ void setWriteDir(string const & newDir);
 void removeFromSearchPath(string const & oldDir);
 
 StringList getSearchPath();
+
+void clearSearchPath();                      // Added for BF
+
+void mountAll(const StringList &folderList); // Added for BF
 
 void getSearchPath(StringCallback callback, void * extra);
 
