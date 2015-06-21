@@ -1,0 +1,10 @@
+To build OpenAL-Soft
+
+# mkdir build
+# cd build
+# Set up vc++ environment vars:  C:\"Program Files"\"Microsoft Visual Studio 10.0"\VC\vcvarsall.bat
+# cmake -DUTILS=0 -DCMAKE_BUILD_TYPE=Release ..
+#* Change that last variable in the above line from 'Release' to 'Debug' if you need a debug build
+# replace all /MD with /MT in the build/ directory (this is so you don't need the vb runtime libs)
+# nmake
+# done!
